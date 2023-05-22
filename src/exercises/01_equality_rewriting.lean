@@ -2,16 +2,16 @@ import data.real.basic
 
 /-
 One of the earliest kind of proofs one encounters while learning mathematics is proving by
-a calculation. It may not sound like a proof, but this is actually using lemmas expressing 
+a calculation. It may not sound like a proof, but this is actually using lemmas expressing
 properties of operations on numbers. It also uses the fundamental property of equality: if two
-mathematical objects A and B are equal then, in any statement involving A, one can replace A 
+mathematical objects A and B are equal then, in any statement involving A, one can replace A
 by B. This operation is called rewriting, and the Lean "tactic" for this is `rw`.
 
 In the following exercises, we will use the following two lemmas:
   mul_assoc a b c : a * b * c = a * (b * c)
   mul_comm a b : a*b = b*a
 
-Hence the command 
+Hence the command
   rw mul_assoc a b c,
 will replace a*b*c by a*(b*c) in the current goal.
 
@@ -35,7 +35,9 @@ end
 -- 0001
 example (a b c : ℝ) : (c * b) * a = b * (a * c) :=
 begin
-  sorry
+  rw mul_comm c b,
+  rw mul_comm a c,
+  exact mul_assoc _ _ _,
 end
 
 -- 0002
@@ -112,10 +114,10 @@ From a practical point of view, when writing such a proof, it is convenient to:
 * pause the tactic state view update in VScode by clicking the Pause icon button
   in the top right corner of the Lean Goal buffer
 * write the full calculation, ending each line with ": by {}"
-* resume tactic state update by clicking the Play icon button and fill in proofs between 
+* resume tactic state update by clicking the Play icon button and fill in proofs between
   curly braces.
 
-Let's return to the other example using this method. 
+Let's return to the other example using this method.
 -/
 
 -- 0005
@@ -127,10 +129,10 @@ end
 /-
 The preceding proofs have exhausted our supply of "mul_comm" patience. Now it's time
 to get the computer to work harder. The `ring` tactic will prove any goal that follows by
-applying only the axioms of commutative (semi-)rings, in particular commutativity and 
+applying only the axioms of commutative (semi-)rings, in particular commutativity and
 associativity of addition and multiplication, as well as distributivity.
 
-We also note that curly braces are not necessary when we write a single tactic proof, so 
+We also note that curly braces are not necessary when we write a single tactic proof, so
 let's get rid of them.
 -/
 
@@ -179,4 +181,3 @@ begin
 end
 
 /- Let's stick to ring in the end. -/
-

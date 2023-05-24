@@ -1,7 +1,7 @@
 import data.real.basic
 
 /-
-In the previous file, we saw how to rewrite using equalities. 
+In the previous file, we saw how to rewrite using equalities.
 The analogue operation with mathematical statements is rewriting using
 equivalences. This is also done using the `rw` tactic.
 Lean uses ↔ to denote equivalence instead of ⇔.
@@ -10,8 +10,8 @@ In the following exercises we will use the lemma:
 
   sub_nonneg {x y : ℝ} : 0 ≤ y - x ↔ x ≤ y
 
-The curly braces around x and y instead of parentheses mean Lean will always try to figure out what 
-x and y are from context, unless we really insist on telling it (we'll see how to insist much later). 
+The curly braces around x and y instead of parentheses mean Lean will always try to figure out what
+x and y are from context, unless we really insist on telling it (we'll see how to insist much later).
 Let's not worry about that for now.
 
 In order to announce an intermediate statement we use:
@@ -42,7 +42,12 @@ Let's prove a variation (without invoking commutativity of addition since this w
 -- 0009
 example {a b : ℝ} (hab : a ≤ b) (c : ℝ) : a + c ≤ b + c :=
 begin
-  sorry
+  rw ← sub_nonneg,
+  have key : b + c - (a + c) = b - a,
+  { ring, },
+  rw key,
+  rw sub_nonneg,
+  exact hab,
 end
 
 
@@ -52,7 +57,7 @@ Let's see how we could use this lemma. It is already in the core library, under 
   add_le_add_right {a b : ℝ} (hab : a ≤ b) (c : ℝ) : a + c ≤ b + c
 
 This can be read as: "add_le_add_right is a function that will take as input real numbers a and b, an
-assumption `hab` claiming a ≤ b and a real number c, and will output a proof of a + c ≤ b + c". 
+assumption `hab` claiming a ≤ b and a real number c, and will output a proof of a + c ≤ b + c".
 
 In addition, recall that curly braces around a b mean Lean will figure out those arguments unless we
 insist to help. This is because they can be deduced from the next argument `hab`.
@@ -66,7 +71,7 @@ begin
 end
 
 /-
-In the second line of the above proof, we need to prove 0 + b ≤ a + b. 
+In the second line of the above proof, we need to prove 0 + b ≤ a + b.
 The proof after the colon says: this is exactly lemma `add_le_add_right` applied to ha and b.
 Actually the `calc` block expects proof terms, and the `by` keyword is used to tell Lean we will use tactics
 to build such a proof term. But since the only tactic used in this block is `exact`, we can skip
@@ -84,7 +89,8 @@ end
 -- 0010
 example (a b : ℝ) (hb : 0 ≤ b) : a ≤ a + b :=
 begin
-  sorry
+  calc a = a + 0 : by ring
+     ... ≤ a + b : add_le_add_left hb a,
 end
 
 /-
@@ -94,11 +100,11 @@ The two preceding examples are in the core library :
   le_add_of_nonneg_right {a b : ℝ} (hb : 0 ≤ b) : a ≤ a + b
 
 Again, there won't be any need to memorize those names, we will
-soon see how to get rid of such goals automatically. 
+soon see how to get rid of such goals automatically.
 But we can already try to understand how their names are built:
 "le_add" describe the conclusion "less or equal than some addition"
-It comes first because we are focussed on proving stuff, and 
-auto-completion works by looking at the beginning of words. 
+It comes first because we are focussed on proving stuff, and
+auto-completion works by looking at the beginning of words.
 "of" introduces assumptions. "nonneg" is Lean's abbreviation for non-negative.
 "left" or "right" disambiguates between the two variations.
 
@@ -112,7 +118,9 @@ the pieces.
 -- 0011
 example (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a + b :=
 begin
-  sorry
+  calc 0 ≤ a : ha
+     ... = a + 0 : by ring
+     ... ≤ a + b : add_le_add_left hb a,
 end
 
 /- And let's combine with our earlier lemmas. -/
@@ -120,21 +128,22 @@ end
 -- 0012
 example (a b c d : ℝ) (hab : a ≤ b) (hcd : c ≤ d) : a + c ≤ b + d :=
 begin
- sorry
+  calc a + c ≤ b + c : add_le_add_right hab c
+         ... ≤ b + d : add_le_add_left hcd b,
 end
 
 /-
 In the above examples, we prepared proofs of assumptions of our lemmas beforehand, so
-that we could feed them to the lemmas. This is called forward reasoning. 
+that we could feed them to the lemmas. This is called forward reasoning.
 The `calc` proofs also belong to this category.
 
-We can also announce the use of a lemma, and provide proofs after the fact, using 
-the `apply` tactic. This is called backward reasoning because we get the conclusion 
-first, and provide proofs later. Using `rw` on the goal (rather than on an assumption 
+We can also announce the use of a lemma, and provide proofs after the fact, using
+the `apply` tactic. This is called backward reasoning because we get the conclusion
+first, and provide proofs later. Using `rw` on the goal (rather than on an assumption
 from the local context) is also backward reasoning.
 
 Let's do that using the lemma
-  
+
   mul_nonneg {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) : 0 ≤ x*y
 -/
 
@@ -175,7 +184,7 @@ end
 /-
 One reason why the backward reasoning proof is shorter is because Lean can
 infer of lot of things by comparing the goal and the lemma statement. Indeed
-in the `apply mul_nonneg` line, we didn't need to tell Lean that x = b - a 
+in the `apply mul_nonneg` line, we didn't need to tell Lean that x = b - a
 and y = c in the lemma. It was infered by "unification" between the lemma
 statement and the goal.
 
@@ -198,7 +207,7 @@ begin
 end
 
 /-
-Let's now combine forward and backward reasoning, to get our most 
+Let's now combine forward and backward reasoning, to get our most
 efficient proof of this statement. Note in particular how unification is used
 to know what to prove inside the parentheses in the `mul_nonneg` arguments.
 -/
@@ -241,15 +250,15 @@ end
 /-
 Let's now move to proving implications. Lean denotes implications using
 a simple arrow →, the same it uses for functions (say denoting the type of functions
-from ℕ to ℕ by ℕ → ℕ). This is because it sees a proof of P ⇒ Q as a function turning 
+from ℕ to ℕ by ℕ → ℕ). This is because it sees a proof of P ⇒ Q as a function turning
 a proof of P into a proof Q.
 
 Many of the examples that we already met are implications under the hood. For instance we proved
 
   le_add_of_nonneg_left (a b : ℝ) (ha : 0 ≤ a) : b ≤ a + b
 
-But this can be rephrased as 
-  
+But this can be rephrased as
+
   le_add_of_nonneg_left (a b : ℝ) : 0 ≤ a → b ≤ a + b
 
 In order to prove P → Q, we use the tactic `intros`, followed by an assumption name.
@@ -271,7 +280,7 @@ example (a b : ℝ): 0 ≤ a → b ≤ a + b :=
 le_add_of_nonneg_left
 
 /- No tactic state is shown in the above line because we don't even need to enter
-tactic mode using `begin` or `by`. 
+tactic mode using `begin` or `by`.
 
 Let's practise using `intros`. -/
 
@@ -285,7 +294,7 @@ end
 
 /-
 What about lemmas having more than one assumption? For instance:
-  
+
   add_nonneg {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a + b
 
 A natural idea is to use the conjunction operator (logical AND), which Lean denotes
@@ -301,11 +310,11 @@ end
 
 /-
 Needing that intermediate line invoking `cases` shows this formulation is not what is used by
-Lean. It rather sees `add_nonneg` as two nested implications: 
-if a is non-negative then if b is non-negative then a+b is non-negative. 
+Lean. It rather sees `add_nonneg` as two nested implications:
+if a is non-negative then if b is non-negative then a+b is non-negative.
 It reads funny, but it is much more convenient to use in practice.
 -/
-example {a b : ℝ} : 0 ≤ a → (0 ≤ b → 0 ≤ a + b) := 
+example {a b : ℝ} : 0 ≤ a → (0 ≤ b → 0 ≤ a + b) :=
 add_nonneg
 
 /-
@@ -327,7 +336,7 @@ begin
 end
 
 /-
-Let's practice `cases` and `split`. In the next exercise, P, Q and R denote 
+Let's practice `cases` and `split`. In the next exercise, P, Q and R denote
 unspecified mathematical statements.
 -/
 
@@ -339,11 +348,11 @@ end
 
 /-
 Of course using `split` only to be able to use `exact` twice in a row feels silly. One can
-also use the anonymous constructor syntax: ⟨ ⟩ 
-Beware those are not parentheses but angle brackets. This is a generic way of providing 
+also use the anonymous constructor syntax: ⟨ ⟩
+Beware those are not parentheses but angle brackets. This is a generic way of providing
 compound objects to Lean when Lean already has a very clear idea of what it is waiting for.
 
-So we could have replaced the last three lines by: 
+So we could have replaced the last three lines by:
   exact ⟨hQ, hP⟩
 
 We can also combine the `intros` steps. We can now compress our earlier proof to:
@@ -355,11 +364,11 @@ begin
   exact H ⟨ha, hb⟩,
 end
 
-/- 
+/-
 The anonymous contructor trick actually also works in `intros` provided we use
 its recursive version `rintros`. So we can replace
   intro h,
-  cases h with h₁ h₂ 
+  cases h with h₁ h₂
 by
   rintros ⟨h₁, h₂⟩,
 Now redo the previous exercise using all those compressing techniques, in exactly two lines. -/
@@ -388,15 +397,15 @@ If you used more than five lines in the above exercise then try to compress thin
 
 One last compression technique: given a proof h of a conjunction P ∧ Q, one can get
 a proof of P using h.left and a proof of Q using h.right, without using cases.
-One can also use the more generic (but less legible) names h.1 and h.2. 
+One can also use the more generic (but less legible) names h.1 and h.2.
 
-Similarly, given a proof h of P ↔ Q, one can get a proof of P → Q using h.mp 
-and a proof of Q → P using h.mpr (or the generic h.1 and h.2 that are even less legible 
+Similarly, given a proof h of P ↔ Q, one can get a proof of P → Q using h.mp
+and a proof of Q → P using h.mpr (or the generic h.1 and h.2 that are even less legible
 in this case).
 
-Before the final exercise in this file, let's make sure we'll be able to leave 
+Before the final exercise in this file, let's make sure we'll be able to leave
 without learning 10 lemma names. The `linarith` tactic will prove any equality or
-inequality or contradiction that follows by linear combinations of assumptions from the 
+inequality or contradiction that follows by linear combinations of assumptions from the
 context (with constant coefficients).
 -/
 
@@ -434,10 +443,10 @@ and the gcd function.
 The definitions are the usual ones, but our goal is to avoid using these definitions and
 only use the following three lemmas:
 
-  dvd_refl (a : ℕ) : a ∣ a 
+  dvd_refl (a : ℕ) : a ∣ a
 
   dvd_antisymm {a b : ℕ} : a ∣ b → b ∣ a → a = b :=
-  
+
   dvd_gcd_iff {a b c : ℕ} : c ∣ gcd a b ↔ c ∣ a ∧ c ∣ b
 -/
 
@@ -449,4 +458,3 @@ example (a b : ℕ) : a ∣ b ↔ gcd a b = a :=
 begin
   sorry
 end
-

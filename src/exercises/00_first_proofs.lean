@@ -254,7 +254,7 @@ begin
 end
 
 /-
-Now we are ready for some analysis. Let's define convergence of sequences of real numbers 
+Now we are ready for some analysis. Let's define convergence of sequences of real numbers
 (of course there is a much more general definition in mathlib).
 -/
 
@@ -420,5 +420,3 @@ begin
     intro n,
     exact y_mino (u n) (huA n) },
 end
-
-

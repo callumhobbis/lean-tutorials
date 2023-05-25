@@ -93,6 +93,8 @@ begin
      ... ≤ a + b : add_le_add_left hb a,
 end
 
+-- Testing `this`.
+
 /-
 The two preceding examples are in the core library :
 
@@ -230,21 +232,37 @@ Let's now practice all three styles using:
 -- 0013
 example (a b c : ℝ) (hc : c ≤ 0) (hab :  a ≤ b) : b*c ≤ a*c :=
 begin
-  sorry
+  rw ← sub_nonneg,
+  have key : a*c - b*c = (a - b)*c,
+  { ring },
+  rw key,
+  apply mul_nonneg_of_nonpos_of_nonpos,
+  { rwa ← sub_nonpos at hab },
+  { exact hc },
 end
 
 /- Using forward reasoning -/
 -- 0014
 example (a b c : ℝ) (hc : c ≤ 0) (hab :  a ≤ b) : b*c ≤ a*c :=
 begin
-  sorry
+  have hab' : a - b ≤ 0,
+  { rwa ← sub_nonpos at hab },
+  have h₁ : 0 ≤ (a - b)*c,
+  { exact mul_nonneg_of_nonpos_of_nonpos hab' hc },
+  have h₂ : (a - b)*c = a*c - b*c,
+  { ring },
+  have h₃ : 0 ≤ a*c - b*c,
+  { rwa h₂ at h₁ },
+  rwa ← sub_nonneg,
 end
 
 /-- Using a combination of both, with a `calc` block -/
 -- 0015
 example (a b c : ℝ) (hc : c ≤ 0) (hab :  a ≤ b) : b*c ≤ a*c :=
 begin
-  sorry
+  rw ← sub_nonneg,
+  calc 0 ≤ (a - b) * c : mul_nonneg_of_nonpos_of_nonpos (by rwa sub_nonpos) hc
+     ... = a*c - b*c   : by ring,
 end
 
 /-
@@ -287,7 +305,10 @@ Let's practise using `intros`. -/
 -- 0016
 example (a b : ℝ): 0 ≤ b → a ≤ a + b :=
 begin
-  sorry
+  intros hb,
+  have hb' : a + 0 ≤ a + b,
+  { exact add_le_add_left hb a, },
+  rwa add_zero at hb',
 end
 
 
@@ -343,7 +364,11 @@ unspecified mathematical statements.
 -- 0017
 example (P Q R : Prop) : P ∧ Q → Q ∧ P :=
 begin
-  sorry
+  intro hPQ,
+  cases hPQ with hP hQ,
+  split,
+  exact hQ,
+  exact hP,
 end
 
 /-
@@ -376,7 +401,8 @@ Now redo the previous exercise using all those compressing techniques, in exactl
 -- 0018
 example (P Q R : Prop): P ∧ Q → Q ∧ P :=
 begin
-  sorry
+  rintros ⟨hP, hQ⟩,
+  exact ⟨hQ, hP⟩,
 end
 
 /-
@@ -388,7 +414,11 @@ an equivalence into two implications.
 -- 0019
 example (P Q R : Prop) : (P ∧ Q → R) ↔ (P → (Q → R)) :=
 begin
-  sorry
+  split,
+  intros hPQR hP hQ,
+  exact hPQR ⟨hP, hQ⟩,
+  rintros hPQR ⟨hP, hQ⟩,
+  exact hPQR hP hQ,
 end
 
 /-
@@ -419,18 +449,12 @@ Now let's enjoy this for a while.
 -/
 
 -- 0020
-example (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a + b :=
-begin
-  sorry
-end
+example (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a + b := by linarith
 
 /- And let's combine with our earlier lemmas. -/
 
 -- 0021
-example (a b c d : ℝ) (hab : a ≤ b) (hcd : c ≤ d) : a + c ≤ b + d :=
-begin
-  sorry
-end
+example (a b c d : ℝ) (hab : a ≤ b) (hcd : c ≤ d) : a + c ≤ b + d := by linarith
 
 
 /-
@@ -456,5 +480,14 @@ open nat
 -- 0022
 example (a b : ℕ) : a ∣ b ↔ gcd a b = a :=
 begin
-  sorry
+  have h : gcd a b ∣ a ∧ gcd a b ∣ b,
+  { rw ← dvd_gcd_iff, },
+  split,
+  { intro hab,
+    apply dvd_antisymm,
+    exact h.left,
+    exact dvd_gcd_iff.mpr ⟨dvd_refl a, hab⟩, },
+  { intro hab,
+    rw hab at h,
+    exact h.right, },
 end

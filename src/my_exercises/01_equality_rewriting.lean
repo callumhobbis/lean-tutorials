@@ -2,16 +2,16 @@ import data.real.basic
 
 /-
 One of the earliest kind of proofs one encounters while learning mathematics is proving by
-a calculation. It may not sound like a proof, but this is actually using lemmas expressing 
+a calculation. It may not sound like a proof, but this is actually using lemmas expressing
 properties of operations on numbers. It also uses the fundamental property of equality: if two
-mathematical objects A and B are equal then, in any statement involving A, one can replace A 
+mathematical objects A and B are equal then, in any statement involving A, one can replace A
 by B. This operation is called rewriting, and the Lean "tactic" for this is `rw`.
 
 In the following exercises, we will use the following two lemmas:
   mul_assoc a b c : a * b * c = a * (b * c)
   mul_comm a b : a*b = b*a
 
-Hence the command 
+Hence the command
   rw mul_assoc a b c,
 will replace a*b*c by a*(b*c) in the current goal.
 
@@ -35,13 +35,17 @@ end
 -- 0001
 example (a b c : ℝ) : (c * b) * a = b * (a * c) :=
 begin
-  sorry
+  rw mul_comm c b,
+  rw mul_comm a c,
+  exact mul_assoc _ _ _,
 end
 
 -- 0002
 example (a b c : ℝ) : a * (b * c) = b * (a * c) :=
 begin
-  sorry
+  rw ← mul_assoc _ _ _,
+  rw mul_comm a _,
+  exact mul_assoc _ _ _,
 end
 
 /-
@@ -55,7 +59,9 @@ Try to figure out what happens.
 -- 0003
 example (a b c : ℝ) : a * (b * c) = b * (a * c) :=
 begin
-  sorry
+  rw ← mul_assoc,
+  rw mul_comm a,
+  exact mul_assoc _ _ _,
 end
 
 /-
@@ -86,7 +92,10 @@ And the next one can use:
 -- 0004
 example (a b c d : ℝ) (hyp : c = b*a - d) (hyp' : d = a*b) : c = 0 :=
 begin
-  sorry
+  rw hyp' at hyp,
+  rw mul_comm b a at hyp,
+  rw sub_self at hyp,
+  exact hyp,
 end
 
 /-
@@ -112,25 +121,28 @@ From a practical point of view, when writing such a proof, it is convenient to:
 * pause the tactic state view update in VScode by clicking the Pause icon button
   in the top right corner of the Lean Goal buffer
 * write the full calculation, ending each line with ": by {}"
-* resume tactic state update by clicking the Play icon button and fill in proofs between 
+* resume tactic state update by clicking the Play icon button and fill in proofs between
   curly braces.
 
-Let's return to the other example using this method. 
+Let's return to the other example using this method.
 -/
 
 -- 0005
 example (a b c d : ℝ) (hyp : c = b*a - d) (hyp' : d = a*b) : c = 0 :=
 begin
-  sorry
+  calc c = b*a - d : by { exact hyp }
+  ... = a*b - d    : by { rw mul_comm }
+  ... = d - d      : by { rw hyp' }
+  ... = 0          : by { rw sub_self, },
 end
 
 /-
 The preceding proofs have exhausted our supply of "mul_comm" patience. Now it's time
 to get the computer to work harder. The `ring` tactic will prove any goal that follows by
-applying only the axioms of commutative (semi-)rings, in particular commutativity and 
+applying only the axioms of commutative (semi-)rings, in particular commutativity and
 associativity of addition and multiplication, as well as distributivity.
 
-We also note that curly braces are not necessary when we write a single tactic proof, so 
+We also note that curly braces are not necessary when we write a single tactic proof, so
 let's get rid of them.
 -/
 
@@ -148,7 +160,7 @@ Of course we can use `ring` outside of `calc`. Let's do the next one in one line
 -- 0006
 example (a b c : ℝ) : a * (b * c) = b * (a * c) :=
 begin
-  sorry
+  ring,
 end
 
 /-
@@ -158,7 +170,7 @@ This is too much fun. Let's do it again.
 -- 0007
 example (a b : ℝ) : (a + b) + a = 2*a + b :=
 begin
-  sorry
+  ring,
 end
 
 /-
@@ -175,8 +187,16 @@ add_zero a : a + 0 = a
 -- 0008
 example (a b : ℝ) : (a + b)*(a - b) = a^2 - b^2 :=
 begin
-  sorry
+  calc (a + b)*(a - b) = (a + b)*a - (a + b)*b : by rw mul_sub
+  ... = a*a + b*a - (a + b)*b                  : by rw add_mul
+  ... = a*a + b*a - (a*b + b*b)                : by rw add_mul
+  ... = a*a + b*a - a*b - b*b                  : by rw ← sub_sub
+  ... = a*a + a*b - a*b - b*b                  : by rw mul_comm a b
+  ... = a*a + (a*b - a*b) - b*b                : by rw add_sub
+  ... = a*a + 0 - b*b                          : by rw sub_self
+  ... = a*a - b*b                              : by rw add_zero
+  ... = a^2 - b*b                              : by rw ← pow_two
+  ... = a^2 - b^2                              : by rw ← pow_two,
 end
 
 /- Let's stick to ring in the end. -/
-

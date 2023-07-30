@@ -4,17 +4,17 @@ import algebra.group.pi
 set_option pp.beta true
 
 /-
-In this file, we'll learn about the ∀ quantifier, and the disjunction 
+In this file, we'll learn about the ∀ quantifier, and the disjunction
 operator ∨ (logical OR).
 
 Let P be a predicate on a type X. This means for every mathematical
-object x with type X, we get a mathematical statement P x. 
+object x with type X, we get a mathematical statement P x.
 In Lean, P x has type Prop.
 
 Lean sees a proof h of `∀ x, P x` as a function sending any `x : X` to
-a proof `h x` of `P x`. 
+a proof `h x` of `P x`.
 This already explains the main way to use an assumption or lemma which
-starts with a ∀. 
+starts with a ∀.
 
 In order to prove `∀ x, P x`, we use `intros x` to fix an arbitrary object
 with type X, and call it x.
@@ -30,10 +30,10 @@ def even_fun (f : ℝ → ℝ) := ∀ x, f (-x) = f x
 def odd_fun (f : ℝ → ℝ) := ∀ x, f (-x) = -f x
 
 /-
-In the next proof, we also take the opportunity to introduce the 
+In the next proof, we also take the opportunity to introduce the
 `unfold` tactic, which simply unfolds definitions. Here this is purely
-for didactic reason, Lean doesn't need those `unfold` invocations. 
-We will also use `rfl` which is a term proving equalities that are true 
+for didactic reason, Lean doesn't need those `unfold` invocations.
+We will also use `rfl` which is a term proving equalities that are true
 by definition (in a very strong sense to be discussed later).
 -/
 
@@ -52,8 +52,8 @@ begin
   intros x,
   -- and let's compute
   calc (f + g) (-x) = f (-x) + g (-x) : rfl
-  ... = f x + g (-x) : by rw hf x 
-  ... = f x + g x : by rw hg x 
+  ... = f x + g (-x) : by rw hf x
+  ... = f x + g x : by rw hg x
   ... = (f + g) x : rfl
 end
 
@@ -69,11 +69,11 @@ The same property of `rw` explain why the first computation line
 is necessary, although its proof is simply `rfl`.
 Before that line, `rw hf x` won't find anything like `f (-x)` hence
 will give up.
-The last line is not necessary however, since it only proves 
+The last line is not necessary however, since it only proves
 something that is true by definition, and is not followed by
 a `rw`.
 
-Also, Lean doesn't need to be told that hf should be specialized to 
+Also, Lean doesn't need to be told that hf should be specialized to
 x before rewriting, exactly as in the first file 01_equality_rewriting.
 We can also gather several rewrites using a list of expressions.
 
@@ -90,7 +90,7 @@ example (f g : ℝ → ℝ) : even_fun f → even_fun g →  even_fun (f + g) :=
 begin
   intros hf hg x,
   calc (f + g) (-x) = f (-x) + g (-x) : rfl
-  ... = f x + g x : by rw [hf, hg] 
+  ... = f x + g x : by rw [hf, hg]
 end
 
 /-
@@ -101,19 +101,23 @@ you can put your mouse cursor above the symbol and wait for one second.
 -- 0023
 example (f g : ℝ → ℝ) : even_fun f → even_fun (g ∘ f) :=
 begin
-  sorry
+  intros hf a,
+  calc (g ∘ f) (-a) = g (f (-a)) : rfl
+                ... = g (f a)    : by rw hf a,
 end
 
 -- 0024
 example (f g : ℝ → ℝ) : odd_fun f → odd_fun g →  odd_fun (g ∘ f) :=
 begin
-  sorry
+  intros hf hg a,
+  calc (g ∘ f) (-a) = g (f (-a)) : rfl
+                ... = -g (f a)   : by rw [hf a, hg (f a)],
 end
 
 /-
-Let's have more quantifiers, and play with forward and backward reasoning. 
+Let's have more quantifiers, and play with forward and backward reasoning.
 
-In the next definitions, note how `∀ x₁, ∀ x₂` is abreviated to `∀ x₁ x₂`. 
+In the next definitions, note how `∀ x₁, ∀ x₂` is abreviated to `∀ x₁ x₂`.
 -/
 
 def non_decreasing (f : ℝ → ℝ) := ∀ x₁ x₂, x₁ ≤ x₂ → f x₁ ≤ f x₂
@@ -134,13 +138,13 @@ end
 
 /-
 In the above proof, note how inconvenient it is to specify x₁ and x₂ in `hf x₁ x₂ h` since
-they could be inferred from the type of h. 
-We could have written `hf _ _ h` and Lean would have filled the holes denoted by _. 
+they could be inferred from the type of h.
+We could have written `hf _ _ h` and Lean would have filled the holes denoted by _.
 
 Even better we could have written the definition
 of `non_decreasing` as: ∀ {x₁ x₂}, x₁ ≤ x₂ → f x₁ ≤ f x₂, with curly braces to denote
 implicit arguments.
- 
+
 But let's leave that aside for now. One possible variation on the above proof is to
 use the `specialize` tactic to replace hf by its specialization to the relevant value.
  -/
@@ -153,7 +157,7 @@ begin
 end
 
 /-
-This `specialize` tactic is mostly useful for exploration, or in preparation for rewriting 
+This `specialize` tactic is mostly useful for exploration, or in preparation for rewriting
 in the assumption. One can very often replace its use by using more complicated expressions
 directly involving the original assumption, as in the next variation:
 -/
@@ -172,7 +176,7 @@ example (f g : ℝ → ℝ) (hf : non_decreasing f) (hg : non_decreasing g) : no
 
 /-
 Of course the above proof is difficult to decipher. The principle in mathlib is to use
-such a proof when the result is obvious and you don't want to read the proof anyway. 
+such a proof when the result is obvious and you don't want to read the proof anyway.
 
 Instead of pursuing this style, let's see how backward reasoning would look like here.
 As usual with this style, we use `apply` and enjoy Lean specializing assumptions for us
@@ -195,7 +199,10 @@ end
 -- 0025
 example (f g : ℝ → ℝ) (hf : non_decreasing f) (hg : non_increasing g) : non_increasing (g ∘ f) :=
 begin
-  sorry
+  intros x₁ x₂ h,
+  apply hg,
+  apply hf,
+  exact h
 end
 
 /-
@@ -213,7 +220,7 @@ In order to directly prove a goal P ∨ Q,
 we use either the `left` tactic and prove P or the `right`
 tactic and prove Q.
 
-In the next proof we use `ring` and `linarith` to get rid of 
+In the next proof we use `ring` and `linarith` to get rid of
 easy computations or inequalities, as well as one lemma:
 
   mul_eq_zero : a*b = 0 ↔ a = 0 ∨ b = 0
@@ -236,7 +243,16 @@ end
 -- 0026
 example (x y : ℝ) : x^2 = y^2 → x = y ∨ x = -y :=
 begin
-  sorry
+  intro h,
+  have H : (x - y)*(x + y) = 0,
+  { calc (x - y)*(x + y) = x^2 - y^2 : by ring
+                     ... = 0         : by linarith, },
+  rw mul_eq_zero at H,
+  cases H with Ha Hb,
+  { left,
+    linarith, },
+  { right,
+    linarith, }
 end
 
 /-
@@ -247,7 +263,13 @@ In the next exercise, we can use:
 -- 0027
 example (f : ℝ → ℝ) : non_decreasing f ↔ ∀ x y, x < y → f x ≤ f y :=
 begin
-  sorry
+  split;
+  intros hf x y hxy,
+  { apply hf,
+    linarith },
+  { cases eq_or_lt_of_le hxy with h₁ h₂,
+    { rw h₁, },
+    { exact hf x y h₂, } }
 end
 
 /-
@@ -258,6 +280,13 @@ In the next exercise, we can use:
 -- 0028
 example (f : ℝ → ℝ) (h : non_decreasing f) (h' : ∀ x, f (f x) = x) : ∀ x, f x = x :=
 begin
-  sorry
+  intros x,
+  have h := le_total (f x) x,
+  cases h with h₁ h₂,
+  { have H := h (f x) x h₁,
+    rw h' x at H,
+    linarith, },
+  { have H := h x (f x) h₂,
+    rw h' x at H,
+    linarith, }
 end
-
